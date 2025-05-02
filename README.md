@@ -56,7 +56,7 @@ The model follows an encoder-decoder architecture with the following major compo
 
 ### Training Approach
 - Loss Function: Smooth L1 Loss weighted by confidence scores across multiple trajectory modes
-- Optimizer: Adam optimizer with configurable learning rate (default: 1e-4) and weight decay (default: 2e-6)
+- Optimizer: Adam optimizer with configurable learning rate (default: 1e-4) and weight decay (default: 2e-5)
 - Learning Rate Schedule: ReduceLROnPlateau scheduler that reduces learning rate when validation metrics plateau
 - Data Augmentation: Supports horizontal flipping of camera images with corresponding sign flips in the trajectory data (x-coordinates and heading). This creates mirrored driving scenarios to improve generalization.
 - Validation Metrics: Tracks ADE and FDE to evaluate prediction accuracy
@@ -74,4 +74,4 @@ We have experimented with an alternative RNN-based architecture that uses a GRU 
 We also experimented with a model that takes in the heading (the third dimension of the future trajectory) as an additional input. However, this approach did not necessarily improve performance compared to the model without heading input. 
 
 
-For hyperparameter tuning, we used Optuna for systematic hyperparameter optimization, conducting multiple trials to find a good configuration. The tuning process explored various hyperparameters including learning rate (1e-5 to 1e-3), weight decay (1e-6 to 1e-3), number of modes (3 to 8), and scheduler parameters. Each configuration was evaluated based on validation ADE/FDE metrics. This optimization led to our final model with 6 modes, a learning rate of 1e-4, and weight decay of 1e-4, which provided the best balance between prediction accuracy and computational efficiency.
+For hyperparameter tuning, we used Optuna for systematic hyperparameter optimization, conducting multiple trials to find a good configuration. The tuning process explored various hyperparameters including learning rate (1e-5 to 1e-3), weight decay (1e-6 to 1e-3), number of modes (3 to 8), and scheduler parameters. Each configuration was evaluated based on validation ADE/FDE metrics. This hyper parameter tuning led to our final model with 4 modes and weight decay of 2e-6, which provided the best balance between prediction accuracy and computational efficiency.
