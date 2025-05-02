@@ -1,4 +1,4 @@
-DLAV Phase 1 — End-to-End Trajectory Planner
+# DLAV Phase 1: End-to-End Trajectory Planner
 
 Students: Mert Ertörer, Syrine Noamen
 Group Name: euro_truck_simulators
@@ -10,9 +10,8 @@ Course: Deep Learning for Autonomous Vehicles
 # Milestone 1: End-to-End Planning
 
 Overview: This project implements an end-to-end deep learning model for the final project of the course DLAV at EPFL in 2025. It is use for predicting future vehicle trajectories using:
-
-    RGB camera input
-    Past motion history
+- RGB camera input
+- Past motion history
 
 We decided to not use the driving command input as it was sometimes very noisy and does not matching the image and position of the ego vehicle.
 
@@ -75,3 +74,5 @@ We also experimented with a model that takes in the heading (the third dimension
 
 
 For hyperparameter tuning, we used Optuna for systematic hyperparameter optimization, conducting multiple trials to find a good configuration. The tuning process explored various hyperparameters including learning rate (1e-5 to 1e-3), weight decay (1e-6 to 1e-3), number of modes (3 to 8), and scheduler parameters. Each configuration was evaluated based on validation ADE/FDE metrics. This hyper parameter tuning led to our final model with 4 modes and weight decay of 2e-6, which provided the best balance between prediction accuracy and computational efficiency.
+
+[Link for weights](https://drive.google.com/file/d/1xoso3Dfy2v38mVxGpaWxlEk4boXm8kv2/view)
