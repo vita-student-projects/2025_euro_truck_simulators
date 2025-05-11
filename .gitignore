@@ -1,0 +1,6 @@
+data/
+phase1_checkpoints/
+phase1_lightning_logs/
+phase2_checkpoints/
+phase2_lightning_logs/
+*.csv
