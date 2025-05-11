@@ -1,6 +1,5 @@
 data/
-phase1_checkpoints/
-phase1_lightning_logs/
-phase2_checkpoints/
-phase2_lightning_logs/
+checkpoints/
+lightning_logs/
+submission/
 *.csv
