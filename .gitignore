@@ -1,0 +1,5 @@
+data/
+checkpoints/
+lightning_logs/
+submission/
+*.csv
