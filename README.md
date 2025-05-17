@@ -167,7 +167,7 @@ We observed that semantic supervision consistently helped reduce overfitting, wh
 | Kaggle ADE           | 1.609    |
 | Number of Modes      | 6        |
 | Backbone             | ResNet18 |
-| Depth Loss Weight    | 0.0      |
+| Depth Loss Weight    | 0.1      |
 | Semantic Loss Weight | 0.33     |
 
 ### Summary
@@ -177,3 +177,9 @@ We observed that semantic supervision consistently helped reduce overfitting, wh
 * Our final model nearly meets the milestone requirement with a **Kaggle ADE of 1.609**, earning full score for this milestone.
 
 [Link for weights](https://drive.google.com/file/d/1HTYCHOZa4ii3Ju8a4pPswd68b9mXXgWx/view?usp=drive_link)
+
+
+### Other things we have tried
+- Dynamic weighting to the auxilary tasks where the weights for the semantic segmentation and depth estimation start high, then decrease gradually after 40% of the training.
+- Custom losses for depth where we used a more forgiving depth loss that focuses on object shapes rather than precise values. It significantly reduces the weight on absolute depth accuracy while maintaining edge detection.
+- Using the pretrained vision encoder and history encoder from milestone one.
