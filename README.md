@@ -138,6 +138,25 @@ The outputs from the semantic and depth decoders are not fed into the trajectory
   * ADE and FDE were monitored for trajectory prediction performance.
   * Additional logging included validation loss for semantic and depth decoders.
 
+* **Other Experiments**:
+
+    We explored several variants and ablation studies to understand the role of auxiliary tasks:
+    
+    * **Depth Masking (Object-Prioritized Loss):**
+    
+      * We applied a spatial mask to prioritize depth loss for foreground objects (e.g., vehicles, pedestrians) over background regions (e.g., sky, ground).
+      * However, this **slightly worsened** overall performance, possibly due to reducing the effective supervision signal.
+    
+    * **Gradual Decrease in Auxiliary Weights:**
+    
+      * We experimented with decaying the auxiliary task weights (`depth_k`, `semantic_k`) over time to shift learning focus to the main task.
+      * This **did not improve** generalization and led to unstable training.
+    
+    * **Stronger Backbone – ResNet34:**
+    
+      * Replacing ResNet18 with ResNet34 in the shared encoder increased model capacity.
+      * However, this resulted in **overfitting** and worse validation ADE, even with regularization and dropout.
+  
 ### Results
 
 We observed that semantic supervision consistently helped reduce overfitting, while depth supervision had mixed results. In our final model, we disabled depth loss to achieve better generalization.
