@@ -76,3 +76,104 @@ We also experimented with a model that takes in the heading (the third dimension
 For hyperparameter tuning, we used Optuna for systematic hyperparameter optimization, conducting multiple trials to find a good configuration. The tuning process explored various hyperparameters including learning rate (1e-5 to 1e-3), weight decay (1e-6 to 1e-3), number of modes (3 to 8), and scheduler parameters. Each configuration was evaluated based on validation ADE/FDE metrics. This hyper parameter tuning led to our final model with 4 modes and weight decay of 2e-6, which provided the best balance between prediction accuracy and computational efficiency.
 
 [Link for weights](https://drive.google.com/file/d/1xoso3Dfy2v38mVxGpaWxlEk4boXm8kv2/view)
+
+# Milestone 2: Perception-Aware Planning
+
+Overview:
+For the second milestone of the DLAV project, we extended our end-to-end deep learning model by incorporating **perception-based auxiliary tasks**: **semantic segmentation** and **depth estimation**. The goal was to enhance trajectory prediction by encouraging the model to learn more spatially meaningful representations through dense supervision.
+
+### Architecture
+
+This phase builds upon our previous encoder-decoder model, with the following additions:
+
+* **Shared Visual Encoder**:
+
+  * Based on ResNet18 pretrained on ImageNet.
+  * Outputs both a **reduced feature map** (used for depth and semantic decoders) and a **global visual feature vector** (used for trajectory prediction).
+  * Includes a `1×1` convolution to reduce channels from 512 to 256 for efficient decoding.
+
+* **Auxiliary Decoders**:
+
+  * **Depth Decoder**:
+
+    * Takes the reduced feature map and predicts a dense depth map.
+    * Output resolution: 200 × 300.
+    * Loss: Smooth L1 Loss.
+  * **Semantic Decoder**:
+
+    * Also operates on the reduced feature map.
+    * Predicts per-pixel class logits for 14 semantic classes.
+    * Loss: CrossEntropyLoss.
+
+* **Trajectory Head**:
+
+  * Remains the same as Phase 1.
+  * Uses the global visual features and history encoding for multimodal trajectory prediction and confidence scoring.
+
+The outputs from the semantic and depth decoders are not fed into the trajectory decoder directly, but their supervision shapes the shared encoder's representations, improving the learned features.
+
+### Training Approach
+
+* **Multi-task Loss**:
+  The total training loss is a weighted sum of trajectory, depth, and semantic segmentation losses:
+
+  ```python
+  loss = traj_loss + depth_k * depth_loss + semantic_k * semantic_loss
+  ```
+
+  * We explored multiple combinations and found that including semantic supervision helped generalization.
+  * Our best performing configuration used `depth_k = 0` and `semantic_k = 0.33`.
+
+* **Curriculum Learning**:
+
+  * We gradually increased the trajectory prediction length over the first 10 epochs.
+
+* **Hyperparameter Tuning**:
+
+  * We continued using Optuna to tune learning rate, weight decay, number of modes, and auxiliary task weights.
+  * Based on validation ADE and FDE, we selected the best model configuration.
+
+* **Evaluation Metrics**:
+
+  * ADE and FDE were monitored for trajectory prediction performance.
+  * Additional logging included validation loss for semantic and depth decoders.
+
+* **Other Experiments**:
+
+    We explored several variants and ablation studies to understand the role of auxiliary tasks:
+    
+    * **Depth Masking (Object-Prioritized Loss):**
+    
+      * We applied a spatial mask to prioritize depth loss for foreground objects (e.g., vehicles, pedestrians) over background regions (e.g., sky, ground).
+      * However, this **slightly worsened** overall performance, possibly due to reducing the effective supervision signal.
+    
+    * **Gradual Decrease in Auxiliary Weights:**
+    
+      * We experimented with decaying the auxiliary task weights (`depth_k`, `semantic_k`) over time to shift learning focus to the main task.
+      * This **did not improve** generalization and led to unstable training.
+    
+    * **Stronger Backbone – ResNet34:**
+    
+      * Replacing ResNet18 with ResNet34 in the shared encoder increased model capacity.
+      * However, this resulted in **overfitting** and worse validation ADE, even with regularization and dropout.
+  
+### Results
+
+We observed that semantic supervision consistently helped reduce overfitting, while depth supervision had mixed results. In our final model, we disabled depth loss to achieve better generalization.
+
+| Metric               | Value    |
+| -------------------- | -------- |
+| Validation ADE       | 1.165     |
+| Kaggle ADE           | 1.609    |
+| Number of Modes      | 6        |
+| Backbone             | ResNet18 |
+| Depth Loss Weight    | 0.0      |
+| Semantic Loss Weight | 0.33     |
+
+### Summary
+
+* We successfully incorporated auxiliary perception tasks to improve the model's trajectory planning.
+* Semantic supervision improved generalization and yielded better validation and test ADE scores.
+* Our final model nearly meets the milestone requirement with a **Kaggle ADE of 1.609**, earning full score for this milestone.
+
+[Link for weights](https://drive.google.com/file/d/1HTYCHOZa4ii3Ju8a4pPswd68b9mXXgWx/view?usp=drive_link)
