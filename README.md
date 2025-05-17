@@ -156,3 +156,4 @@ We observed that semantic supervision consistently helped reduce overfitting, wh
 * We successfully incorporated auxiliary perception tasks to improve the model's trajectory planning.
 * Semantic supervision improved generalization and yielded better validation and test ADE scores.
 * Our final model nearly meets the milestone requirement with a **Kaggle ADE of 1.609**, earning full score for this milestone.
+[Link for weights](https://drive.google.com/file/d/1HTYCHOZa4ii3Ju8a4pPswd68b9mXXgWx/view?usp=drive_link)
