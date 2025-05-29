@@ -167,6 +167,108 @@ We observed that semantic supervision consistently helped reduce overfitting, wh
 | Kaggle ADE           | 1.609    |
 | Number of Modes      | 6        |
 | Backbone             | ResNet18 |
+| Depth Loss Weight    | 0.0      |
+| Semantic Loss Weight | 0.33     |
+
+### Summary
+
+* We successfully incorporated auxiliary perception tasks to improve the model's trajectory planning.
+* Semantic supervision improved generalization and yielded better validation and test ADE scores.
+* Our final model nearly meets the milestone requirement with a **Kaggle ADE of 1.609**, earning full score for this milestone.
+
+[Link for weights](https://drive.google.com/file/d/1HTYCHOZa4ii3Ju8a4pPswd68b9mXXgWx/view?usp=drive_link)
+
+
+# Milestone 2: Perception-Aware Planning
+
+Overview:
+For the second milestone of the DLAV project, we extended our end-to-end deep learning model by incorporating **perception-based auxiliary tasks**: **semantic segmentation** and **depth estimation**. The goal was to enhance trajectory prediction by encouraging the model to learn more spatially meaningful representations through dense supervision.
+
+### Architecture
+
+This phase builds upon our previous encoder-decoder model, with the following additions:
+
+* **Shared Visual Encoder**:
+
+  * Based on ResNet18 pretrained on ImageNet.
+  * Outputs both a **reduced feature map** (used for depth and semantic decoders) and a **global visual feature vector** (used for trajectory prediction).
+  * Includes a `1×1` convolution to reduce channels from 512 to 256 for efficient decoding.
+
+* **Auxiliary Decoders**:
+
+  * **Depth Decoder**:
+
+    * Takes the reduced feature map and predicts a dense depth map.
+    * Output resolution: 200 × 300.
+    * Loss: Smooth L1 Loss.
+  * **Semantic Decoder**:
+
+    * Also operates on the reduced feature map.
+    * Predicts per-pixel class logits for 14 semantic classes.
+    * Loss: CrossEntropyLoss.
+
+* **Trajectory Head**:
+
+  * Remains the same as Phase 1.
+  * Uses the global visual features and history encoding for multimodal trajectory prediction and confidence scoring.
+
+The outputs from the semantic and depth decoders are not fed into the trajectory decoder directly, but their supervision shapes the shared encoder's representations, improving the learned features.
+
+### Training Approach
+
+* **Multi-task Loss**:
+  The total training loss is a weighted sum of trajectory, depth, and semantic segmentation losses:
+
+  ```python
+  loss = traj_loss + depth_k * depth_loss + semantic_k * semantic_loss
+  ```
+
+  * We explored multiple combinations and found that including semantic supervision helped generalization.
+  * Our best performing configuration used `depth_k = 0` and `semantic_k = 0.33`.
+
+* **Curriculum Learning**:
+
+  * We gradually increased the trajectory prediction length over the first 10 epochs.
+
+* **Hyperparameter Tuning**:
+
+  * We continued using Optuna to tune learning rate, weight decay, number of modes, and auxiliary task weights.
+  * Based on validation ADE and FDE, we selected the best model configuration.
+
+* **Evaluation Metrics**:
+
+  * ADE and FDE were monitored for trajectory prediction performance.
+  * Additional logging included validation loss for semantic and depth decoders.
+
+* **Other Experiments**:
+
+    We explored several variants and ablation studies to understand the role of auxiliary tasks:
+    
+    * **Depth Masking (Object-Prioritized Loss):**
+    
+      * We applied a spatial mask to prioritize depth loss for foreground objects (e.g., vehicles, pedestrians) over background regions (e.g., sky, ground).
+      * However, this **slightly worsened** overall performance, possibly due to reducing the effective supervision signal.
+    
+    * **Gradual Decrease in Auxiliary Weights:**
+    
+      * We experimented with decaying the auxiliary task weights (`depth_k`, `semantic_k`) over time to shift learning focus to the main task.
+      * This **did not improve** generalization and led to unstable training.
+    
+    * **Stronger Backbone – ResNet34:**
+    
+      * Replacing ResNet18 with ResNet34 in the shared encoder increased model capacity.
+      * However, this resulted in **overfitting** and worse validation ADE, even with regularization and dropout.
+  
+### Results
+
+We observed that semantic supervision consistently helped reduce overfitting, while depth supervision had mixed results. In our final model, we disabled depth loss to achieve better generalization.
+
+| Metric               | Value    |
+| -------------------- | -------- |
+| Validation ADE       | 1.165     |
+| Kaggle ADE           | 1.609    |
+| Number of Modes      | 6        |
+| Backbone             | ResNet18 |
 | Depth Loss Weight    | 0.1      |
 | Semantic Loss Weight | 0.33     |
 
@@ -183,3 +285,109 @@ We observed that semantic supervision consistently helped reduce overfitting, wh
 - Dynamic weighting to the auxilary tasks where the weights for the semantic segmentation and depth estimation start high, then decrease gradually after 40% of the training.
 - Custom losses for depth where we used a more forgiving depth loss that focuses on object shapes rather than precise values. It significantly reduces the weight on absolute depth accuracy while maintaining edge detection.
 - Using the pretrained vision encoder and history encoder from milestone one.
+---
+
+# Milestone 3: Real-World-Aware Multi-Task Planning
+File train_milstone3.py is the training script for this milestone.
+
+### Overview:
+
+In the third milestone of the DLAV project, we addressed the **domain gap** between synthetic and real-world data by integrating **real-world driving scenes** into both training and evaluation. While our model from previous milestones performed well on synthetic data, it struggled to generalize to real images. To overcome this, we:
+
+* Incorporated **real-world validation data** into the training pipeline.
+* Applied extensive **data augmentations** to both synthetic and real datasets.
+* Generated **semantic labels** for real-world data using pretrained models, allowing us to **retain auxiliary supervision**.
+
+These enhancements significantly boosted our model’s performance on real-world inputs.
+
+---
+
+### Architecture
+
+We continued using our encoder-decoder architecture from Milestone 2 with the following maintained and extended components:
+
+* **Shared Visual Encoder**:
+
+  * Based on ResNet18, pretrained on ImageNet.
+  * Produces both global visual embeddings (for trajectory prediction) and spatial feature maps (for semantic segmentation).
+
+* **Auxiliary Decoder**:
+
+  * **Semantic Decoder**:
+
+    * Operates on spatial visual feature maps.
+    * Predicts per-pixel class logits for 15 semantic classes.
+    * Loss: CrossEntropyLoss.
+    * Newly added: Real-world semantic labels using pretrained models.
+
+* **Trajectory Head**:
+
+  * Predicts multiple future trajectory modes (4 modes × 60 time steps).
+  * Uses fused visual and history features for multimodal prediction.
+  * Outputs confidence scores per mode (softmax-normalized).
+
+---
+
+### Training Approach
+
+* **Data Augmentation**:
+
+  * Applied incrementally to synthetic and real-world datasets.
+  * Techniques included:
+
+    * Horizontal flip
+    * Gamma correction
+    * Brightness adjustment
+    * Gaussian noise
+    * Blur
+  * Resulted in a significantly larger and more diverse dataset.
+
+* **Real-World Data Integration**:
+
+  * Half of the real validation data was used in training.
+  * Remaining half retained for testing and final evaluation.
+
+* **Multi-task Loss**:
+  We retained the semantic auxiliary loss used in Phase 2:
+
+  ```python
+  loss = traj_loss + semantic_k * semantic_loss
+  ```
+
+  * `semantic_k = 0.3` was used in the final configuration.
+
+* **Hyperparameter Tuning**:
+
+  * Continued using Optuna for tuning:
+
+    * Learning rate
+    * Weight decay
+    * Number of trajectory modes
+    * Semantic loss weight
+
+* **Evaluation Metrics**:
+
+  * ADE and FDE for trajectory prediction.
+  * Semantic segmentation accuracy on real validation data.
+
+---
+
+### Results
+
+Real-world supervision and data augmentations led to **significantly improved generalization**. Semantic supervision continued to serve as a powerful regularizer, even when labels were generated automatically.
+
+| Metric               | Value                                |
+| Validation ADE       | 1.4941     |
+| Kaggle ADE           | 1.2665    |
+| Real Data Used       | 50% in training                      |
+| Semantic Loss Weight | 0.3                                  |
+| Augmentation Methods | Flip, Gamma, Brightness, Noise, Blur |
+
+---
+
+### Summary
+
+* Integrated real-world data into training and validation for better sim-to-real transfer.
+* Used pretrained models to generate semantic labels for real scenes—maintaining auxiliary learning benefits.
+* Enhanced dataset with diverse augmentations to improve robustness.
+* Achieved significantly better real-world performance without sacrificing synthetic data performance.
