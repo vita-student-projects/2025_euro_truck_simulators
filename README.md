@@ -392,3 +392,5 @@ Real-world supervision and data augmentations led to **significantly improved ge
 * Used pretrained models to generate semantic labels for real scenes—maintaining auxiliary learning benefits.
 * Enhanced dataset with diverse augmentations to improve robustness.
 * Achieved significantly better real-world performance without sacrificing synthetic data performance.
+
+[Link for weights](https://drive.google.com/file/d/1SfAzDkRln08PfNiXejR1UFK1k2F1B6Hb/view?usp=drive_link)
