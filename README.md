@@ -377,8 +377,9 @@ We continued using our encoder-decoder architecture from Milestone 2 with the fo
 Real-world supervision and data augmentations led to **significantly improved generalization**. Semantic supervision continued to serve as a powerful regularizer, even when labels were generated automatically.
 
 | Metric               | Value                                |
-| Validation ADE       | 1.4941     |
-| Kaggle ADE           | 1.2665    |
+| --------------------- | ------------------------------------|
+| Validation ADE       | 1.4941                               |
+| Kaggle ADE           | 1.2665                               |
 | Real Data Used       | 50% in training                      |
 | Semantic Loss Weight | 0.3                                  |
 | Augmentation Methods | Flip, Gamma, Brightness, Noise, Blur |
